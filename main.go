@@ -6,6 +6,7 @@ import (
 	"crawler/cookies"
 	"crawler/playwright"
 	"crawler/scraper"
+	"fmt"
 	"log"
 )
 
@@ -57,6 +58,10 @@ func main() {
 	}
 
 	// 提取数据
-	scraper.ExtractData(page)
+	data, err := scraper.ExtractData(page)
+	if err != nil {
+		return
+	}
+	fmt.Println(data)
 	log.Println("数据提取完成")
 }
