@@ -2,10 +2,10 @@
 package main
 
 import (
+	"crawler/common/playwright"
+	"crawler/common/scraper"
 	"crawler/config"
 	"crawler/cookies"
-	"crawler/playwright"
-	"crawler/scraper"
 	"fmt"
 	"log"
 )
