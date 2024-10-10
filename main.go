@@ -3,171 +3,189 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"gopkg.in/yaml.v3"
-	"io/ioutil"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/playwright-community/playwright-go"
+	"gopkg.in/yaml.v3"
 )
 
+// Config 定义配置文件结构
 type Config struct {
-	Username        string `yaml:"username"`
-	Password        string `yaml:"password"`
-	CookiesFilePath string `yaml:"cookiesFilePath"`
+	CookiesFilePath string `yaml:"cookies_file_path"`
+}
+
+// OriginalCookie 定义原始Cookie结构
+type OriginalCookie struct {
+	Domain         string  `json:"domain"`
+	ExpirationDate float64 `json:"expirationDate,omitempty"`
+	Name           string  `json:"name"`
+	Path           string  `json:"path"`
+	SameSite       string  `json:"sameSite"`
+	HttpOnly       bool    `json:"httpOnly"`
+	Secure         bool    `json:"secure"`
+	Value          string  `json:"value"`
 }
 
 func main() {
-	err, username, password, cookiesFilePath := ConfigInit()
+	log.Println("开始执行程序")
 
-	// 初始化 Playwright
+	// 安装Playwright
 	if err := playwright.Install(); err != nil {
-		log.Fatalf("无法安装 Playwright: %v", err)
+		log.Fatalf("安装 Playwright 失败: %v", err)
+	} else {
+		log.Println("Playwright 安装成功")
 	}
 
+	// 运行Playwright
 	pw, err := playwright.Run()
 	if err != nil {
-		log.Fatalf("无法启动 Playwright: %v", err)
+		log.Fatalf("启动 Playwright 失败: %v", err)
 	}
-	defer pw.Stop()
+	defer func() {
+		pw.Stop()
+		log.Println("Playwright 停止运行")
+	}()
 
 	// 启动浏览器
 	browser, err := pw.Chromium.Launch(playwright.BrowserTypeLaunchOptions{
-		Headless: playwright.Bool(false), // 设置为 true 则为无头模式
+		Headless: playwright.Bool(false),
 	})
 	if err != nil {
-		log.Fatalf("无法启动浏览器: %v", err)
+		log.Fatalf("启动浏览器失败: %v", err)
 	}
-	defer browser.Close()
+	defer func() {
+		browser.Close()
+		log.Println("浏览器已关闭")
+	}()
 
-	// 初始化上下文
-	var context playwright.BrowserContext
+	// 初始化配置
+	cookiesFilePath, err := ConfigInit()
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
 
-	if _, err := os.ReadFile(cookiesFilePath); err == nil {
-		// 如果存在 storage_state.json，加载存储状态
-		context, err = browser.NewContext(playwright.BrowserNewContextOptions{
-			StorageStatePath: playwright.String(cookiesFilePath),
-		})
-		if err != nil {
-			log.Fatalf("无法创建浏览器上下文: %v", err)
-		}
+	// 检查Cookies文件路径
+	if _, err := os.Stat(cookiesFilePath); os.IsNotExist(err) {
+		log.Fatalf("Cookies 文件不存在，请检查路径: %v", cookiesFilePath)
 	} else {
-		// 如果不存在 storage_state.json，创建新上下文并登录
-		context, err = browser.NewContext()
-		if err != nil {
-			log.Fatalf("无法创建浏览器上下文: %v", err)
-		}
-
-		page, err := context.NewPage()
-		if err != nil {
-			log.Fatalf("无法创建页面: %v", err)
-		}
-
-		// 导航到登录页面
-		if _, err = page.Goto("https://www.zhihu.com/signin"); err != nil {
-			log.Fatalf("无法导航到登录页面: %v", err)
-		}
-
-		// 输入用户名和密码（请替换为您的实际用户名和密码）
-		if err = page.Fill("input[name='username']", username); err != nil {
-			log.Fatalf("无法输入用户名: %v", err)
-		}
-
-		if err = page.Fill("input[name='password']", password); err != nil {
-			log.Fatalf("无法输入密码: %v", err)
-		}
-
-		// 点击登录按钮
-		if err = page.Click("button[type='submit']"); err != nil {
-			log.Fatalf("无法点击登录按钮: %v", err)
-		}
-
-		// 等待登录成功（替换为登录后页面的特定元素选择器）
-		if _, err = page.WaitForSelector("img[alt='头像']"); err != nil {
-			log.Fatalf("登录后未能成功导航: %v", err)
-		}
-
-		// 获取存储状态
-		state, err := context.StorageState()
-		if err != nil {
-			log.Fatalf("无法获取存储状态: %v", err)
-		}
-
-		// 序列化存储状态为 JSON
-		stateJSON, err := json.Marshal(state)
-		if err != nil {
-			log.Fatalf("无法序列化存储状态: %v", err)
-		}
-
-		// 保存存储状态到文件
-		if err = ioutil.WriteFile(cookiesFilePath, stateJSON, 0644); err != nil {
-			log.Fatalf("无法保存存储状态: %v", err)
-		}
+		log.Printf("Cookies 文件路径: %s", cookiesFilePath)
 	}
-	defer context.Close()
 
-	// 创建新的页面
+	// 创建浏览器上下文
+	context, err := browser.NewContext()
+	if err != nil {
+		log.Fatalf("创建浏览器上下文失败: %v", err)
+	}
+	defer func() {
+		context.Close()
+		log.Println("浏览器上下文已关闭")
+	}()
+
+	// 加载Cookies
+	err = LoadCookies(context, cookiesFilePath)
+	if err != nil {
+		log.Fatalf("加载Cookies失败: %v", err)
+	} else {
+		log.Println("Cookies 加载成功")
+	}
+
+	// 创建页面
 	page, err := context.NewPage()
 	if err != nil {
-		log.Fatalf("无法创建页面: %v", err)
+		log.Fatalf("创建页面失败: %v", err)
 	}
+	defer func() {
+		page.Close()
+		log.Println("页面已关闭")
+	}()
 
-	// 监听网络请求响应
-	var apiResponse playwright.Response
-	page.OnResponse(func(response playwright.Response) {
-		if strings.Contains(response.URL(), "/api/v4/creators/creations/v2/article") {
-			apiResponse = response
-		}
-	})
-
-	// 导航到需要触发 API 请求的页面
+	// 导航到页面
 	if _, err := page.Goto("https://www.zhihu.com/creator/manage/creation/article"); err != nil {
-		log.Fatalf("无法导航到页面: %v", err)
-	}
-
-	// 延迟一段时间以确保请求被捕获到
-	// 这里可以设置更长时间，也可以使用 page.WaitForTimeout(xxx) 来确保加载完成
-	if apiResponse != nil {
-		data, err := apiResponse.Text()
-		if err != nil {
-			log.Fatalf("无法获取响应内容: %v", err)
-		}
-
-		// 检查是否获取到数据
-		if data != "" {
-			fmt.Println("获取到的 API 数据：")
-			fmt.Println(data)
-		} else {
-			fmt.Println("未能获取到 API 数据，请检查是否已登录或请求 URL 是否正确。")
-		}
+		log.Fatalf("导航到页面失败: %v", err)
 	} else {
-		fmt.Println("未能获取到目标 API 请求的响应。")
+		log.Println("成功导航到指定页面")
 	}
 
+	// 等待响应
+	timeoutOption := playwright.PageExpectResponseOptions{Timeout: playwright.Float(60000)} // 增加超时时间
+	_, err = page.ExpectResponse("api/v4/creators/creations/v2/article", func() error {
+		return nil
+	}, timeoutOption)
+	if err != nil {
+		log.Fatalf("等待响应失败: %v", err)
+	} else {
+		log.Println("成功获取响应")
+	}
+	fmt.Println("成功获取响应")
 }
 
-func ConfigInit() (error, string, string, string) {
-	// 读取 YAML 配置文件
+// ConfigInit 从配置文件初始化配置
+func ConfigInit() (string, error) {
+	log.Println("开始读取配置文件")
 	configFile, err := os.ReadFile("config.yaml")
 	if err != nil {
-		log.Fatalf("无法读取配置文件: %v", err)
+		return "", fmt.Errorf("读取配置文件失败: %v", err)
 	}
 
-	// 解析 YAML 配置文件
 	var config Config
 	if err := yaml.Unmarshal(configFile, &config); err != nil {
-		log.Fatalf("无法解析配置文件: %v", err)
+		return "", fmt.Errorf("解析配置文件失败: %v", err)
 	}
 
-	// 获取用户名和密码
-	username := config.Username
-	password := config.Password
-	// 获取存储状态文件路径
-	cookiesFilePath := config.CookiesFilePath
-
-	if username == "" || password == "" {
-		log.Fatalf("用户名或密码为空，请检查配置文件")
+	if config.CookiesFilePath == "" {
+		return "", fmt.Errorf("cookies 文件路径为空，请检查配置文件")
 	}
-	return err, username, password, cookiesFilePath
+	log.Println("配置文件读取并解析成功")
+	return config.CookiesFilePath, nil
+}
+
+// LoadCookies 从文件加载Cookies到浏览器上下文
+func LoadCookies(context playwright.BrowserContext, cookiesFilePath string) error {
+	log.Printf("开始从文件加载Cookies，文件路径: %s", cookiesFilePath)
+	cookiesData, err := os.ReadFile(cookiesFilePath)
+	if err != nil {
+		return fmt.Errorf("读取Cookies文件失败: %v", err)
+	}
+
+	var originalCookies []OriginalCookie
+	if err := json.Unmarshal(cookiesData, &originalCookies); err != nil {
+		return fmt.Errorf("解析Cookies数据失败: %v", err)
+	}
+
+	cookies := make([]playwright.OptionalCookie, 0, len(originalCookies))
+	for _, oc := range originalCookies {
+		var samesite *playwright.SameSiteAttribute
+		switch oc.SameSite {
+		case "Strict":
+			samesite = playwright.SameSiteAttributeStrict
+		case "Lax":
+			samesite = playwright.SameSiteAttributeLax
+		case "None":
+			samesite = playwright.SameSiteAttributeNone
+		}
+
+		var exp *float64
+		if oc.ExpirationDate != 0 {
+			exp = &oc.ExpirationDate
+		}
+
+		cookie := playwright.OptionalCookie{
+			Name:     oc.Name,
+			Value:    oc.Value,
+			Domain:   &oc.Domain,
+			Path:     &oc.Path,
+			HttpOnly: &oc.HttpOnly,
+			Secure:   &oc.Secure,
+			SameSite: samesite,
+			Expires:  exp,
+		}
+		cookies = append(cookies, cookie)
+	}
+
+	if err := context.AddCookies(cookies); err != nil {
+		return fmt.Errorf("添加Cookies失败: %v", err)
+	}
+	log.Println("Cookies成功添加到浏览器上下文")
+	return nil
 }
