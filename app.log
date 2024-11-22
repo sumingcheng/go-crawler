@@ -1,0 +1,5 @@
+{"level":"info","time":"2024-11-22T16:26:35.320+0800","msg":"程序启动"}
+{"level":"info","time":"2024-11-22T16:26:35.328+0800","msg":"配置加载成功","username":"username","cookies_path":"cookies/zhihu.json"}
+{"level":"info","time":"2024-11-22T16:26:35.328+0800","msg":"开始安装 Playwright"}
+{"level":"error","time":"2024-11-22T16:26:35.329+0800","msg":"Playwright 初始化失败","error":"please install the driver (v1.47.2) and browsers first: %!w(<nil>)"}
+{"level":"info","time":"2024-11-22T16:26:35.330+0800","msg":"程序退出"}
