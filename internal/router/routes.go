@@ -8,8 +8,10 @@ import (
 
 // SetupRoutes 注册所有路由
 func (r *Router) SetupRoutes() {
-	// 注册各个路由组
+	// 注册健康检查路由
 	r.setupHealthRoutes()
+
+	// 注册 API 路由
 	r.setupAPIRoutes()
 }
 

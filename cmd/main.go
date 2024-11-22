@@ -29,7 +29,11 @@ func main() {
 	}).Info("配置加载成功")
 
 	// 初始化路由
-	r := router.NewRouter(cfg)
+	r, err := router.NewRouter(cfg)
+	if err != nil {
+		logger.Error("路由初始化失败", "error", err)
+		return
+	}
 	r.SetupRoutes()
 
 	// 启动服务器
