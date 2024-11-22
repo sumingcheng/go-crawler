@@ -1,9 +1,9 @@
 package cookies
 
 import (
+	"crawler/pkg/logger"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/playwright-community/playwright-go"
@@ -21,16 +21,30 @@ type OriginalCookie struct {
 }
 
 func LoadCookies(context playwright.BrowserContext, cookiesFilePath string) error {
-	log.Printf("开始从文件加载Cookies，文件路径: %s", cookiesFilePath)
+	logger.Info("开始加载Cookies",
+		"file_path", cookiesFilePath,
+	)
+
 	cookiesData, err := os.ReadFile(cookiesFilePath)
 	if err != nil {
-		return fmt.Errorf("读取Cookies文件失败: %v", err)
+		logger.Error("读取Cookies文件失败",
+			"error", err,
+			"file_path", cookiesFilePath,
+		)
+		return fmt.Errorf("读取Cookies文件失败: %w", err)
 	}
 
 	var originalCookies []OriginalCookie
 	if err := json.Unmarshal(cookiesData, &originalCookies); err != nil {
-		return fmt.Errorf("解析Cookies数据失败: %v", err)
+		logger.Error("解析Cookies数据失败",
+			"error", err,
+		)
+		return fmt.Errorf("解析Cookies数据失败: %w", err)
 	}
+
+	logger.Info("成功解析Cookies数据",
+		"count", len(originalCookies),
+	)
 
 	cookies := make([]playwright.OptionalCookie, 0, len(originalCookies))
 	for _, oc := range originalCookies {
@@ -63,8 +77,15 @@ func LoadCookies(context playwright.BrowserContext, cookiesFilePath string) erro
 	}
 
 	if err := context.AddCookies(cookies); err != nil {
-		return fmt.Errorf("添加Cookies失败: %v", err)
+		logger.Error("添加Cookies到浏览器失败",
+			"error", err,
+			"cookies_count", len(cookies),
+		)
+		return fmt.Errorf("添加Cookies失败: %w", err)
 	}
-	log.Println("Cookies成功添加到浏览器上下文")
+
+	logger.Info("Cookies添加成功",
+		"count", len(cookies),
+	)
 	return nil
 }
