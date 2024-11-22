@@ -2,7 +2,7 @@
 app:
   username: username
   password: password
-  cookiesFilePath: "cookies/zhihu.json"
+  cookiesFilePath: "zhihu.json"
 
 # 日志配置
 logger:

@@ -4,9 +4,10 @@ import (
 	"crawler/internal/service"
 	"crawler/pkg/logger"
 	"crawler/pkg/response"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 type CrawlerController struct {
@@ -24,6 +25,16 @@ func (cc *CrawlerController) HandleCrawl(c *gin.Context) {
 	logger.Info("收到爬取请求",
 		"trace_id", c.GetString("trace_id"),
 	)
+
+	if err := cc.crawlerService.CheckPrerequisites(); err != nil {
+		logger.Error("前置条件检查失败",
+			"error", err,
+			"duration", time.Since(start).String(),
+			"trace_id", c.GetString("trace_id"),
+		)
+		response.Error(c, http.StatusBadRequest, "爬取前置条件不满足: "+err.Error())
+		return
+	}
 
 	if err := cc.crawlerService.ExecuteCrawl(); err != nil {
 		logger.Error("爬取失败",
