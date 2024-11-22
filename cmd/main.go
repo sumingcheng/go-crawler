@@ -1,9 +1,9 @@
 package main
 
 import (
+	"crawler/internal/router"
 	"crawler/pkg/config"
 	"crawler/pkg/logger"
-	"crawler/pkg/router"
 	"log"
 )
 
