@@ -1,10 +1,9 @@
-// playwright.go
 package main
 
 import (
-	"crawler/internal/playwright"
 	"crawler/pkg/config"
 	"crawler/pkg/logger"
+	"crawler/pkg/router"
 	"log"
 )
 
@@ -29,8 +28,13 @@ func main() {
 		"cookies_path": cfg.App.CookiesFilePath,
 	}).Info("配置加载成功")
 
-	// 选择使用Playwright爬取数据
-	playwright.ExecutePlaywright(cfg)
+	// 初始化路由
+	r := router.NewRouter(cfg)
+	r.SetupRoutes()
 
-	logger.Info("程序退出")
+	// 启动服务器
+	logger.Info("开始监听端口", "addr", cfg.Server.Port)
+	if err := r.Run(cfg.Server.Port); err != nil {
+		logger.Error("服务器启动失败", "error", err)
+	}
 }

@@ -11,6 +11,9 @@ import (
 type Config struct {
 	App    AppConfig           `yaml:"app"`
 	Logger logger.LoggerConfig `yaml:"logger"`
+	Server struct {
+		Port string `yaml:"port"`
+	} `yaml:"server"`
 }
 
 // AppConfig 应用配置结构
