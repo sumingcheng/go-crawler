@@ -18,7 +18,6 @@ type AppConfig struct {
 	Username        string `yaml:"username"`
 	Password        string `yaml:"password"`
 	CookiesFilePath string `yaml:"cookiesFilePath"`
-	// 可以根据需要添加其他配置项
 }
 
 // LoadConfig 加载配置文件

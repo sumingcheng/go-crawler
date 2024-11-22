@@ -2,8 +2,8 @@ package playwright
 
 import (
 	"crawler/common/scraper"
-	"crawler/cookies"
 	"crawler/pkg/config"
+	"crawler/pkg/cookies"
 	"crawler/pkg/logger"
 
 	"github.com/playwright-community/playwright-go"

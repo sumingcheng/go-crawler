@@ -24,4 +24,4 @@ go.work.sum
 # env file
 .env
 config.yaml
-/cookies/zhihu.json
+/pkg/cookies/zhihu.json
