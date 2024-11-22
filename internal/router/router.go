@@ -6,8 +6,8 @@ import (
 	"crawler/internal/service"
 	"crawler/pkg/config"
 	"crawler/pkg/logger"
+
 	"github.com/gin-gonic/gin"
-	"time"
 )
 
 type Router struct {
@@ -64,14 +64,8 @@ func NewRouter(cfg *config.Config) *Router {
 	}
 }
 
-func (r *Router) SetupRoutes() {
-	// 健康检查
-	r.engine.GET("/health", r.handleHealth)
-
-	api := r.engine.Group("/api")
-	{
-		api.POST("/crawl", r.crawler.HandleCrawl)
-	}
+func (r *Router) GetEngine() *gin.Engine {
+	return r.engine
 }
 
 func (r *Router) Run(addr string) error {
@@ -80,11 +74,4 @@ func (r *Router) Run(addr string) error {
 		"mode", gin.Mode(),
 	)
 	return r.engine.Run(addr)
-}
-
-func (r *Router) handleHealth(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"status": "up",
-		"time":   time.Now().Format(time.RFC3339),
-	})
 }
