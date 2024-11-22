@@ -1,3 +1,15 @@
-username: username
-password: password
-CookiesFilePath: 'cookies/zhihu.json'
+# 应用配置
+app:
+  username: username
+  password: password
+  cookiesFilePath: "cookies/zhihu.json"
+
+# 日志配置
+logger:
+  level: "info"
+  filename: "app.log"
+  maxsize: 100 # 100MB
+  maxage: 7 # 保留7天
+  maxbackups: 10 # 保留10个备份
+  compress: true # 压缩旧文件
+  console: true # 同时输出到控制台
