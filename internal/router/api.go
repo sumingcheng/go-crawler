@@ -1,53 +1,90 @@
 package router
 
 import (
-	"crawler/internal/playwright"
+	"crawler/internal/controller"
+	"crawler/internal/middleware"
+	"crawler/internal/service"
 	"crawler/pkg/config"
 	"crawler/pkg/logger"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
+	"time"
 )
 
 type Router struct {
-	config *config.Config
-	engine *gin.Engine
+	config  *config.Config
+	engine  *gin.Engine
+	crawler *controller.CrawlerController
 }
 
 func NewRouter(cfg *config.Config) *Router {
+	// 设置 gin 的日志输出
+	gin.DisableConsoleColor()
 	gin.SetMode(gin.ReleaseMode)
+
+	// 使用自定义日志格式
+	gin.DebugPrintRouteFunc = func(httpMethod, absolutePath, handlerName string, nuHandlers int) {
+		logger.Info("路由注册",
+			"method", httpMethod,
+			"path", absolutePath,
+			"handler", handlerName,
+			"middleware_count", nuHandlers,
+		)
+	}
+
 	engine := gin.New()
-	engine.Use(gin.Recovery())
+
+	// 初始化服务
+	crawlerService := service.NewCrawlerService(cfg)
+	crawlerController := controller.NewCrawlerController(crawlerService)
+
+	// 添加中间件
+	engine.Use(
+		gin.LoggerWithFormatter(func(param gin.LogFormatterParams) string {
+			// 记录到我们的日志系统
+			logger.Info("HTTP请求",
+				"status", param.StatusCode,
+				"method", param.Method,
+				"path", param.Path,
+				"client_ip", param.ClientIP,
+				"duration", param.Latency,
+				"user_agent", param.Request.UserAgent(),
+				"error", param.ErrorMessage,
+			)
+			return "" // 不输出到控制台
+		}),
+		gin.Recovery(),
+		middleware.Trace(),
+		middleware.Cors(),
+	)
 
 	return &Router{
-		config: cfg,
-		engine: engine,
+		config:  cfg,
+		engine:  engine,
+		crawler: crawlerController,
 	}
 }
 
 func (r *Router) SetupRoutes() {
+	// 健康检查
+	r.engine.GET("/health", r.handleHealth)
+
 	api := r.engine.Group("/api")
 	{
-		api.POST("/crawl", r.handleCrawl)
+		api.POST("/crawl", r.crawler.HandleCrawl)
 	}
 }
 
 func (r *Router) Run(addr string) error {
+	logger.Info("HTTP服务启动",
+		"addr", addr,
+		"mode", gin.Mode(),
+	)
 	return r.engine.Run(addr)
 }
 
-func (r *Router) handleCrawl(c *gin.Context) {
-	logger.Info("收到爬取请求")
-
-	if err := playwright.ExecutePlaywright(r.config); err != nil {
-		logger.Error("爬取失败", "error", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": "爬取成功",
+func (r *Router) handleHealth(c *gin.Context) {
+	c.JSON(200, gin.H{
+		"status": "up",
+		"time":   time.Now().Format(time.RFC3339),
 	})
 }
