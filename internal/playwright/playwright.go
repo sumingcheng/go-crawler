@@ -1,7 +1,7 @@
 package playwright
 
 import (
-	"crawler/common/scraper"
+	"crawler/internal/scraper"
 	"crawler/pkg/config"
 	"crawler/pkg/cookies"
 	"crawler/pkg/logger"

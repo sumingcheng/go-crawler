@@ -2,7 +2,7 @@
 package main
 
 import (
-	"crawler/common/playwright"
+	"crawler/internal/playwright"
 	"crawler/pkg/config"
 	"crawler/pkg/logger"
 	"log"
