@@ -18,28 +18,38 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 FROM mcr.microsoft.com/playwright:v1.42.0-jammy
 
 ENV TZ=Asia/Shanghai
-ENV HTTP_PROXY=http://host.docker.internal:7890
-ENV HTTPS_PROXY=http://host.docker.internal:7890
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+ENV DEBIAN_FRONTEND=noninteractive
 
 WORKDIR /app
 
 COPY --from=builder /app/crawler .
 
-RUN mkdir -p /app/data/logs /app/data/cookies /app/config \
-  && apt-get update \
+# 创建必要的目录
+RUN mkdir -p /app/data/logs /app/data/cookies /app/config
+
+# 配置清华源
+RUN sed -i 's/archive.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list \
+  && sed -i 's/security.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list
+
+# 安装系统依赖
+RUN apt-get update \
   && apt-get install -y --no-install-recommends \
   tzdata \
   curl \
   ca-certificates \
-  && playwright install chromium \
-  && playwright install-deps chromium \
-  && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
-  && echo $TZ > /etc/timezone \
   && rm -rf /var/lib/apt/lists/*
 
+# 安装 Playwright 依赖
+RUN playwright install chromium \
+  && playwright install-deps chromium
+
+# 配置时区
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
+  && echo $TZ > /etc/timezone
+
 ENV GIN_MODE=release
-ENV CONFIG_PATH=/app/config/config.yaml
+ENV CONFIG_PATH=/app/config/config
 
 VOLUME ["/app/config", "/app/data/logs", "/app/data/cookies"]
 
