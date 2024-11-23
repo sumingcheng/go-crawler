@@ -2,7 +2,7 @@ package router
 
 import (
 	"context"
-	"crawler/internal/api"
+	"crawler/internal/controller"
 	"crawler/internal/middleware"
 	"crawler/pkg/config"
 	"crawler/pkg/logger"
@@ -19,7 +19,7 @@ import (
 type Router struct {
 	config   *config.Config
 	engine   *gin.Engine
-	handlers *api.Handlers
+	handlers *controller.Handlers
 }
 
 // NewRouter 创建并初始化 HTTP 路由实例
@@ -39,7 +39,7 @@ func NewRouter(cfg *config.Config) (*Router, error) {
 	router := &Router{
 		config:   cfg,
 		engine:   engine,
-		handlers: api.NewHandlers(cfg),
+		handlers: controller.NewHandlers(cfg),
 	}
 
 	// 设置中间件
