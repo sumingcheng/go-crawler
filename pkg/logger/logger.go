@@ -1,11 +1,11 @@
 package logger
 
 import (
+	"fmt"
 	"os"
+	"path/filepath"
 	"sync"
-	"time"
 
-	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -38,7 +38,7 @@ type LoggerConfig struct {
 	MaxAge     int    `yaml:"maxage"`     // 保留天数
 	MaxBackups int    `yaml:"maxbackups"` // 保留文件个数
 	Compress   bool   `yaml:"compress"`   // 是否压缩
-	Console    bool   `yaml:"console"`    // 是否同时输出到控制台
+	Console    bool   `yaml:"console"`    // 是否同时输出到制台
 }
 
 var initErr error
@@ -53,6 +53,14 @@ func Init(cfg LoggerConfig) error {
 
 // NewLogger 创建新的日志实例
 func NewLogger(cfg LoggerConfig) (Logger, error) {
+	// 确保日志目录存在
+	if cfg.Filename != "" {
+		dir := filepath.Dir(cfg.Filename)
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return nil, fmt.Errorf("创建日志目录失败: %w", err)
+		}
+	}
+
 	level := zap.NewAtomicLevelAt(zapcore.InfoLevel)
 	if cfg.Level != "" {
 		level.UnmarshalText([]byte(cfg.Level))
@@ -74,11 +82,11 @@ func NewLogger(cfg LoggerConfig) (Logger, error) {
 	if cfg.Filename != "" {
 		writer := &lumberjack.Logger{
 			Filename:   cfg.Filename,
-			MaxSize:    cfg.MaxSize,    // MB
-			MaxAge:     cfg.MaxAge,     // days
-			MaxBackups: cfg.MaxBackups, // files
-			Compress:   cfg.Compress,   // 是否压缩
-			LocalTime:  true,           // 使用本地时间
+			MaxSize:    cfg.MaxSize,
+			MaxAge:     cfg.MaxAge,
+			MaxBackups: cfg.MaxBackups,
+			Compress:   cfg.Compress,
+			LocalTime:  true,
 		}
 		cores = append(cores, zapcore.NewCore(
 			zapcore.NewJSONEncoder(encoderConfig),
@@ -122,37 +130,3 @@ func Error(msg string, args ...interface{})           { defaultLogger.Error(msg,
 func Debug(msg string, args ...interface{})           { defaultLogger.Debug(msg, args...) }
 func Warn(msg string, args ...interface{})            { defaultLogger.Warn(msg, args...) }
 func WithFields(fields map[string]interface{}) Logger { return defaultLogger.WithFields(fields) }
-
-// InitFromConfig 从配置初始化日志
-func InitFromConfig(cfg LoggerConfig) error {
-	return Init(cfg)
-}
-
-// GinLogger 返回一个 gin.HandlerFunc，用于记录 HTTP 请求日志
-func GinLogger() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		start := time.Now()
-		path := c.Request.URL.Path
-		raw := c.Request.URL.RawQuery
-
-		c.Next()
-
-		// 请求处理完成后记录日志
-		fields := map[string]interface{}{
-			"status":     c.Writer.Status(),
-			"method":     c.Request.Method,
-			"path":       path,
-			"query":      raw,
-			"ip":         c.ClientIP(),
-			"duration":   time.Since(start),
-			"user_agent": c.Request.UserAgent(),
-		}
-
-		if len(c.Errors) > 0 {
-			fields["error"] = c.Errors.String()
-			Error("HTTP请求失败", fields)
-		} else {
-			Info("HTTP请求成功", fields)
-		}
-	}
-}
