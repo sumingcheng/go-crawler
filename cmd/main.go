@@ -15,7 +15,7 @@ func main() {
 	}
 
 	// 初始化日志系统
-	if err := logger.Init(cfg.Logger); err != nil {
+	if err := logger.InitializeLogger(cfg.Logger); err != nil {
 		log.Fatalf("日志系统初始化失败: %v", err)
 	}
 

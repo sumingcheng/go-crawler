@@ -1,10 +1,11 @@
 package scraper
 
 import (
-	playwright2 "github.com/playwright-community/playwright-go"
 	"log"
 	"strconv"
 	"strings"
+
+	playwright2 "github.com/playwright-community/playwright-go"
 )
 
 type ArticleCard struct {

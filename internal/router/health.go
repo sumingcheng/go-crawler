@@ -8,13 +8,10 @@ import (
 
 // setupHealthRoutes 注册健康检查相关路由
 func (r *Router) setupHealthRoutes() {
-	r.engine.GET("/health", handleHealth)
-}
-
-// handleHealth 健康检查处理器
-func handleHealth(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"status": "up",
-		"time":   time.Now().Format(time.RFC3339),
+	r.engine.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"status": "up",
+			"time":   time.Now().Format(time.RFC3339),
+		})
 	})
 }

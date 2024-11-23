@@ -40,8 +40,8 @@ var (
 	initErr       error
 )
 
-// Init 初始化全局日志实例
-func Init(cfg LoggerConfig) error {
+// InitializeLogger 初始化全局日志实例
+func InitializeLogger(cfg LoggerConfig) error {
 	once.Do(func() {
 		defaultLogger, initErr = NewLogger(cfg)
 	})
