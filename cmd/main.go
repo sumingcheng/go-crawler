@@ -19,14 +19,12 @@ func main() {
 		log.Fatalf("日志系统初始化失败: %v", err)
 	}
 
-	// 使用封装的日志记录
-	logger.Info("程序启动")
-
-	// 记录带字段的日志
+	// 记录关键配置信息
 	logger.WithFields(map[string]interface{}{
 		"username":     cfg.App.Username,
 		"cookies_path": cfg.App.CookiesFilePath,
-	}).Info("配置加载成功")
+		"server_port":  cfg.Server.Port,
+	}).Info("系统初始化完成")
 
 	// 初始化路由
 	r, err := router.NewRouter(cfg)
@@ -37,7 +35,6 @@ func main() {
 	r.SetupRoutes()
 
 	// 启动服务器
-	logger.Info("开始监听端口", "addr", cfg.Server.Port)
 	if err := r.Run(cfg.Server.Port); err != nil {
 		logger.Error("服务器启动失败", "error", err)
 	}
