@@ -23,32 +23,32 @@ type Router struct {
 	crawler *controller.CrawlerController
 }
 
-// 配置检查
-func validateConfig(cfg *config.Config) error {
+// validateServerConfig 验证 HTTP 服务器配置的合法性
+func validateServerConfig(cfg *config.Config) error {
 	if cfg.Server.ReadTimeout <= 0 {
-		return fmt.Errorf("invalid read timeout: %v", cfg.Server.ReadTimeout)
+		return fmt.Errorf("HTTP服务器读取超时时间配置无效: %v", cfg.Server.ReadTimeout)
 	}
 	if cfg.Server.WriteTimeout <= 0 {
-		return fmt.Errorf("invalid write timeout: %v", cfg.Server.WriteTimeout)
+		return fmt.Errorf("HTTP服务器写入超时时间配置无效: %v", cfg.Server.WriteTimeout)
 	}
 	return nil
 }
 
-// 设置中间件
-func setupMiddlewares(engine *gin.Engine, cfg *config.Config) {
+// setupGlobalMiddlewares 配置全局中间件
+func setupGlobalMiddlewares(engine *gin.Engine, cfg *config.Config) {
 	engine.Use(
-		middleware.RequestID(),
+		middleware.TraceID(),
 		middleware.Cors(cfg),
 		gin.LoggerWithConfig(gin.LoggerConfig{
-			Formatter: customLogFormatter,
+			Formatter: formatHTTPRequestLog,
 			SkipPaths: []string{"/health", "/metrics"},
 		}),
 		gin.Recovery(),
 	)
 }
 
-// 自定义日志格式
-func customLogFormatter(param gin.LogFormatterParams) string {
+// formatHTTPRequestLog 格式化 HTTP 请求日志
+func formatHTTPRequestLog(param gin.LogFormatterParams) string {
 	// 使用结构化日志
 	fields := map[string]interface{}{
 		"status":     param.StatusCode,
@@ -58,21 +58,22 @@ func customLogFormatter(param gin.LogFormatterParams) string {
 		"duration":   param.Latency.Seconds(),
 		"user_agent": param.Request.UserAgent(),
 		"error":      param.ErrorMessage,
-		"request_id": param.Request.Header.Get("X-Request-ID"),
+		"trace_id":   param.Request.Header.Get(middleware.TraceIDHeader),
 	}
 
 	if param.StatusCode >= 400 {
-		logger.Error("HTTP请求异常", fields)
+		logger.Error("HTTP请求失败", fields)
 	} else {
-		logger.Info("HTTP请求", fields)
+		logger.Info("HTTP请求成功", fields)
 	}
 	return ""
 }
 
+// NewRouter 创建并初始化 HTTP 路由实例
 func NewRouter(cfg *config.Config) (*Router, error) {
 	// 配置检查
-	if err := validateConfig(cfg); err != nil {
-		return nil, fmt.Errorf("invalid config: %w", err)
+	if err := validateServerConfig(cfg); err != nil {
+		return nil, fmt.Errorf("服务器配置验证失败: %w", err)
 	}
 
 	// 设置 gin 模式
@@ -98,11 +99,12 @@ func NewRouter(cfg *config.Config) (*Router, error) {
 	}
 
 	// 设置中间件
-	setupMiddlewares(engine, cfg)
+	setupGlobalMiddlewares(engine, cfg)
 
 	return router, nil
 }
 
+// Run 启动 HTTP 服务器并支持优雅关闭
 func (r *Router) Run(addr string) error {
 	srv := &http.Server{
 		Addr:              addr,
