@@ -12,7 +12,6 @@ const (
 
 func TraceID() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 优先从请求头获取
 		traceID := c.GetHeader(TraceIDHeader)
 		if traceID == "" {
 			traceID = uuid.New().String()
@@ -20,6 +19,7 @@ func TraceID() gin.HandlerFunc {
 
 		c.Set(TraceIDKey, traceID)
 		c.Header(TraceIDHeader, traceID)
+
 		c.Next()
 	}
 }
