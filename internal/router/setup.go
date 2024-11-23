@@ -23,15 +23,39 @@ type Router struct {
 	crawler *controller.CrawlerController
 }
 
-// validateServerConfig 验证 HTTP 服务器配置的合法性
-func validateServerConfig(cfg *config.Config) error {
-	if cfg.Server.ReadTimeout <= 0 {
-		return fmt.Errorf("HTTP服务器读取超时时间配置无效: %v", cfg.Server.ReadTimeout)
+// NewRouter 创建并初始化 HTTP 路由实例
+func NewRouter(cfg *config.Config) (*Router, error) {
+	// 配置检查
+	if err := validateServerConfig(cfg); err != nil {
+		return nil, fmt.Errorf("服务器配置验证失败: %w", err)
 	}
-	if cfg.Server.WriteTimeout <= 0 {
-		return fmt.Errorf("HTTP服务器写入超时时间配置无效: %v", cfg.Server.WriteTimeout)
+
+	// 设置 gin 模式
+	gin.SetMode(cfg.Server.Mode)
+
+	engine := gin.New()
+
+	// 设置受信任代理
+	if len(cfg.Server.TrustedProxies) > 0 {
+		if err := engine.SetTrustedProxies(cfg.Server.TrustedProxies); err != nil {
+			return nil, fmt.Errorf("set trusted proxies failed: %w", err)
+		}
 	}
-	return nil
+
+	// 初始化服务和控制器
+	crawlerService := service.NewCrawlerService(cfg)
+	crawlerController := controller.NewCrawlerController(crawlerService)
+
+	router := &Router{
+		config:  cfg,
+		engine:  engine,
+		crawler: crawlerController,
+	}
+
+	// 设置中间件
+	setupGlobalMiddlewares(engine, cfg)
+
+	return router, nil
 }
 
 // setupGlobalMiddlewares 配置全局中间件
@@ -67,41 +91,6 @@ func formatHTTPRequestLog(param gin.LogFormatterParams) string {
 		logger.Info("HTTP请求成功", fields)
 	}
 	return ""
-}
-
-// NewRouter 创建并初始化 HTTP 路由实例
-func NewRouter(cfg *config.Config) (*Router, error) {
-	// 配置检查
-	if err := validateServerConfig(cfg); err != nil {
-		return nil, fmt.Errorf("服务器配置验证失败: %w", err)
-	}
-
-	// 设置 gin 模式
-	gin.SetMode(cfg.Server.Mode)
-
-	engine := gin.New()
-
-	// 设置受信任代理
-	if len(cfg.Server.TrustedProxies) > 0 {
-		if err := engine.SetTrustedProxies(cfg.Server.TrustedProxies); err != nil {
-			return nil, fmt.Errorf("set trusted proxies failed: %w", err)
-		}
-	}
-
-	// 初始化服务和控制器
-	crawlerService := service.NewCrawlerService(cfg)
-	crawlerController := controller.NewCrawlerController(crawlerService)
-
-	router := &Router{
-		config:  cfg,
-		engine:  engine,
-		crawler: crawlerController,
-	}
-
-	// 设置中间件
-	setupGlobalMiddlewares(engine, cfg)
-
-	return router, nil
 }
 
 // Run 启动 HTTP 服务器并支持优雅关闭
@@ -140,4 +129,15 @@ func (r *Router) Run(addr string) error {
 	)
 
 	return srv.ListenAndServe()
+}
+
+// validateServerConfig 验证 HTTP 服务器配置的合法性
+func validateServerConfig(cfg *config.Config) error {
+	if cfg.Server.ReadTimeout <= 0 {
+		return fmt.Errorf("HTTP服务器读取超时时间配置无效: %v", cfg.Server.ReadTimeout)
+	}
+	if cfg.Server.WriteTimeout <= 0 {
+		return fmt.Errorf("HTTP服务器写入超时时间配置无效: %v", cfg.Server.WriteTimeout)
+	}
+	return nil
 }
