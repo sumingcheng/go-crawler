@@ -35,7 +35,7 @@ func NewRouter(cfg *config.Config) (*Router, error) {
 
 	engine := gin.New()
 
-	// 设置受信任代理
+	// 设置受信任代理服务器IP列表
 	if len(cfg.Server.TrustedProxies) > 0 {
 		if err := engine.SetTrustedProxies(cfg.Server.TrustedProxies); err != nil {
 			return nil, fmt.Errorf("set trusted proxies failed: %w", err)
