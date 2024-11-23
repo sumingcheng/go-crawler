@@ -25,11 +25,6 @@ type Router struct {
 
 // NewRouter 创建并初始化 HTTP 路由实例
 func NewRouter(cfg *config.Config) (*Router, error) {
-	// 配置检查
-	if err := validateServerConfig(cfg); err != nil {
-		return nil, fmt.Errorf("服务器配置验证失败: %w", err)
-	}
-
 	// 设置 gin 模式
 	gin.SetMode(cfg.Server.Mode)
 
@@ -38,7 +33,7 @@ func NewRouter(cfg *config.Config) (*Router, error) {
 	// 设置受信任代理服务器IP列表
 	if len(cfg.Server.TrustedProxies) > 0 {
 		if err := engine.SetTrustedProxies(cfg.Server.TrustedProxies); err != nil {
-			return nil, fmt.Errorf("set trusted proxies failed: %w", err)
+			return nil, fmt.Errorf("设置受信任代理失败: %w", err)
 		}
 	}
 
@@ -71,13 +66,11 @@ func setupGlobalMiddlewares(engine *gin.Engine, cfg *config.Config) {
 // Run 启动 HTTP 服务器并支持优雅关闭
 func (r *Router) Run(addr string) error {
 	srv := &http.Server{
-		Addr:              addr,
-		Handler:           r.engine,
-		ReadTimeout:       r.config.Server.ReadTimeout,
-		WriteTimeout:      r.config.Server.WriteTimeout,
-		MaxHeaderBytes:    r.config.Server.MaxHeaderBytes,
-		IdleTimeout:       120 * time.Second,
-		ReadHeaderTimeout: 20 * time.Second,
+		Addr:           addr,
+		Handler:        r.engine,
+		ReadTimeout:    r.config.Server.ReadTimeout,
+		WriteTimeout:   r.config.Server.WriteTimeout,
+		MaxHeaderBytes: r.config.Server.MaxHeaderBytes,
 	}
 
 	// 优雅关闭
@@ -98,21 +91,7 @@ func (r *Router) Run(addr string) error {
 	logger.Info("HTTP服务启动",
 		"addr", addr,
 		"mode", gin.Mode(),
-		"read_timeout", r.config.Server.ReadTimeout,
-		"write_timeout", r.config.Server.WriteTimeout,
-		"max_header_bytes", r.config.Server.MaxHeaderBytes,
 	)
 
 	return srv.ListenAndServe()
-}
-
-// validateServerConfig 验证 HTTP 服务器配置的合法性
-func validateServerConfig(cfg *config.Config) error {
-	if cfg.Server.ReadTimeout <= 0 {
-		return fmt.Errorf("HTTP服务器读取超时时间配置无效: %v", cfg.Server.ReadTimeout)
-	}
-	if cfg.Server.WriteTimeout <= 0 {
-		return fmt.Errorf("HTTP服务器写入超时时间配置无效: %v", cfg.Server.WriteTimeout)
-	}
-	return nil
 }
