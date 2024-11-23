@@ -63,34 +63,9 @@ func setupGlobalMiddlewares(engine *gin.Engine, cfg *config.Config) {
 	engine.Use(
 		middleware.TraceID(),
 		middleware.Cors(cfg),
-		gin.LoggerWithConfig(gin.LoggerConfig{
-			Formatter: formatHTTPRequestLog,
-			SkipPaths: []string{"/health", "/metrics"},
-		}),
+		gin.Logger(),
 		gin.Recovery(),
 	)
-}
-
-// formatHTTPRequestLog 格式化 HTTP 请求日志
-func formatHTTPRequestLog(param gin.LogFormatterParams) string {
-	// 使用结构化日志
-	fields := map[string]interface{}{
-		"status":     param.StatusCode,
-		"method":     param.Method,
-		"path":       param.Path,
-		"client_ip":  param.ClientIP,
-		"duration":   param.Latency.Seconds(),
-		"user_agent": param.Request.UserAgent(),
-		"error":      param.ErrorMessage,
-		"trace_id":   param.Request.Header.Get(middleware.TraceIDHeader),
-	}
-
-	if param.StatusCode >= 400 {
-		logger.Error("HTTP请求失败", fields)
-	} else {
-		logger.Info("HTTP请求成功", fields)
-	}
-	return ""
 }
 
 // Run 启动 HTTP 服务器并支持优雅关闭

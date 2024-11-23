@@ -3,7 +3,9 @@ package logger
 import (
 	"os"
 	"sync"
+	"time"
 
+	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -124,4 +126,33 @@ func WithFields(fields map[string]interface{}) Logger { return defaultLogger.Wit
 // InitFromConfig 从配置初始化日志
 func InitFromConfig(cfg LoggerConfig) error {
 	return Init(cfg)
+}
+
+// GinLogger 返回一个 gin.HandlerFunc，用于记录 HTTP 请求日志
+func GinLogger() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		path := c.Request.URL.Path
+		raw := c.Request.URL.RawQuery
+
+		c.Next()
+
+		// 请求处理完成后记录日志
+		fields := map[string]interface{}{
+			"status":     c.Writer.Status(),
+			"method":     c.Request.Method,
+			"path":       path,
+			"query":      raw,
+			"ip":         c.ClientIP(),
+			"duration":   time.Since(start),
+			"user_agent": c.Request.UserAgent(),
+		}
+
+		if len(c.Errors) > 0 {
+			fields["error"] = c.Errors.String()
+			Error("HTTP请求失败", fields)
+		} else {
+			Info("HTTP请求成功", fields)
+		}
+	}
 }
