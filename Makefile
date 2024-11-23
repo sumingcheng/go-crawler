@@ -1,27 +1,41 @@
-# 设置默认后缀和镜像标签
-SUFFIX ?= local
-IMAGE_TAG ?= 1.0.0
+# 设置变量
+APP_NAME := crawler
+VERSION ?= v1.0.0
+DOCKER_IMAGE := $(APP_NAME):$(VERSION)
 
-# 定义应用名称和镜像信息
-APP_NAME := backend
-FULL_IMAGE_TAG := $(IMAGE_TAG)-$(SUFFIX)
-IMAGE_FULL_NAME := $(APP_NAME):$(FULL_IMAGE_TAG)
-CONTAINER_NAME := $(APP_NAME)-$(SUFFIX)
-
-# 构建目标
+# 构建镜像
 build:
-	@if ! docker images -q $(IMAGE_FULL_NAME) | grep -q .; then \
-		docker build -t $(IMAGE_FULL_NAME) -f ./docker/Dockerfile.prod .; \
-	fi
+	docker build -t $(DOCKER_IMAGE) -f deploy/Dockerfile .
 
-# 停止目标
+# 运行容器
+run:
+	docker run -d \
+		--name $(APP_NAME) \
+		-p 8080:8080 \
+		-v $(PWD)/config:/app/config \
+		-v $(PWD)/data/logs:/app/data/logs \
+		-v $(PWD)/data/cookies:/app/data/cookies \
+		$(DOCKER_IMAGE)
+
+# 停止容器
 stop:
-	@docker stop $(CONTAINER_NAME) || true
+	docker stop $(APP_NAME) || true
+	docker rm $(APP_NAME) || true
 
-# 清理目标
-rm-all:
-	@docker rm $(CONTAINER_NAME) || true
-	@docker rmi $(IMAGE_FULL_NAME) || true
+# 清理容器和镜像
+clean: stop
+	docker rmi $(DOCKER_IMAGE) || true
 
-# 伪目标声明
-.PHONY: build run stop rm-all
+# 查看日志
+logs:
+	docker logs -f $(APP_NAME)
+
+# 重启容器
+restart: stop run
+
+# 创建必要的目录结构
+init:
+	mkdir -p config data/logs data/cookies
+
+# 声明伪目标
+.PHONY: help build run stop clean logs restart init

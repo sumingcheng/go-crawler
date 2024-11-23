@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  crawler:
+    container_name: crawler:latest
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+    volumes:
+      - ../config:/app/config
+      - ../data/logs:/app/data/logs
+      - ../data/cookies:/app/data/cookies
+    environment:
+      - GIN_MODE=release
+      - CONFIG_PATH=/app/config/config.yaml
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8080/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
