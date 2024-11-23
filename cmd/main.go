@@ -18,14 +18,6 @@ func main() {
 	if err := logger.InitializeLogger(cfg.Logger); err != nil {
 		log.Fatalf("日志系统初始化失败: %v", err)
 	}
-
-	// 记录关键配置信息
-	logger.WithFields(map[string]interface{}{
-		"username":     cfg.App.Username,
-		"cookies_path": cfg.App.CookiesFilePath,
-		"server_port":  cfg.Server.Port,
-	}).Info("系统初始化完成")
-
 	// 初始化路由
 	r, err := router.NewRouter(cfg)
 	if err != nil {
