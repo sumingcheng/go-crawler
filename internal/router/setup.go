@@ -27,35 +27,30 @@ func NewRouter(cfg *config.Config) (*Router, error) {
 	// 设置 gin 模式
 	gin.SetMode(cfg.Server.Mode)
 
-	engine := gin.New()
+	ginEngine := gin.New()
 
 	// 设置受信任代理服务器IP列表
 	if len(cfg.Server.TrustedProxies) > 0 {
-		if err := engine.SetTrustedProxies(cfg.Server.TrustedProxies); err != nil {
+		if err := ginEngine.SetTrustedProxies(cfg.Server.TrustedProxies); err != nil {
 			return nil, fmt.Errorf("设置受信任代理失败: %w", err)
 		}
 	}
 
-	router := &Router{
+	ginRouter := &Router{
 		config:   cfg,
-		engine:   engine,
-		handlers: controller.NewHandlers(cfg),
+		engine:   ginEngine,
+		handlers: controller.InitializeHandlers(cfg),
 	}
 
-	// 设置中间件
-	setupGlobalMiddlewares(engine, cfg)
-
-	return router, nil
-}
-
-// setupGlobalMiddlewares 配置全局中间件
-func setupGlobalMiddlewares(engine *gin.Engine, cfg *config.Config) {
-	engine.Use(
+	// 全局中间件
+	ginEngine.Use(
 		middleware.TraceID(),
 		middleware.Cors(cfg),
 		gin.Logger(),
 		gin.Recovery(),
 	)
+
+	return ginRouter, nil
 }
 
 // Run 启动 HTTP 服务器并支持优雅关闭
