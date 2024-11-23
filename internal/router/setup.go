@@ -69,19 +69,20 @@ func (r *Router) Run(addr string) error {
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 		<-quit
 
-		logger.Info("正在关闭服务器...")
+		logger.Info("开始执行优雅关闭...")
+
+		// 1. 停止接收新请求
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 
+		// 2. 等待现有请求处理完成
 		if err := srv.Shutdown(ctx); err != nil {
-			logger.Error("服务器关闭异常", "error", err)
+			logger.Error("HTTP服务关闭异常", "error", err)
 		}
+
+		logger.Info("服务已完全关闭")
 	}()
 
-	logger.Info("HTTP服务启动",
-		"addr", addr,
-		"mode", gin.Mode(),
-	)
-
+	logger.Info("HTTP服务启动", "addr", addr, "mode", gin.Mode())
 	return srv.ListenAndServe()
 }
