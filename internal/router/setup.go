@@ -2,9 +2,8 @@ package router
 
 import (
 	"context"
-	"crawler/internal/controller"
+	"crawler/internal/api"
 	"crawler/internal/middleware"
-	"crawler/internal/service"
 	"crawler/pkg/config"
 	"crawler/pkg/logger"
 	"fmt"
@@ -18,9 +17,9 @@ import (
 )
 
 type Router struct {
-	config  *config.Config
-	engine  *gin.Engine
-	crawler *controller.CrawlerController
+	config   *config.Config
+	engine   *gin.Engine
+	handlers *api.Handlers
 }
 
 // NewRouter 创建并初始化 HTTP 路由实例
@@ -37,14 +36,10 @@ func NewRouter(cfg *config.Config) (*Router, error) {
 		}
 	}
 
-	// 初始化服务和控制器
-	crawlerService := service.NewCrawlerService(cfg)
-	crawlerController := controller.NewCrawlerController(crawlerService)
-
 	router := &Router{
-		config:  cfg,
-		engine:  engine,
-		crawler: crawlerController,
+		config:   cfg,
+		engine:   engine,
+		handlers: api.NewHandlers(cfg),
 	}
 
 	// 设置中间件
