@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -50,7 +51,10 @@ func InitializeLogger(cfg LoggerConfig) error {
 
 // NewLogger 创建新的日志实例
 func NewLogger(cfg LoggerConfig) (Logger, error) {
+	fmt.Printf("日志配置: %+v\n", cfg)
+
 	if err := ensureLogDir(cfg.Filename); err != nil {
+		fmt.Printf("创建日志目录失败: %v\n", err)
 		return nil, err
 	}
 

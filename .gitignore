@@ -25,6 +25,5 @@ go.work.sum
 .env
 config.yaml
 /pkg/cookies/zhihu.json
-.log
-/log/*.log
+*.log
 zhihu.json
