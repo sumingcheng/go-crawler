@@ -86,3 +86,10 @@ func (r *Router) Run(addr string) error {
 	logger.Info("HTTP服务启动", "addr", addr, "mode", gin.Mode())
 	return srv.ListenAndServe()
 }
+
+func (r *Router) SetupRoutes() {
+	// 注册业务路由
+	r.setupCrawlerRoutes()
+	// 注册系统路由（健康检查等）
+	r.setupHealthRoutes()
+}
