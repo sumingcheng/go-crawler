@@ -1,9 +1,13 @@
 package main
 
 import (
+	"crawler/internal/controller"
+	"crawler/internal/repository"
 	"crawler/internal/router"
+	"crawler/internal/service"
 	"crawler/pkg/config"
 	"crawler/pkg/logger"
+	"crawler/pkg/mysql"
 	"log"
 )
 
@@ -18,8 +22,21 @@ func main() {
 	if err := logger.InitializeLogger(cfg.Logger); err != nil {
 		log.Fatalf("日志系统初始化失败: %v", err)
 	}
+
+	// 初始化数据库连接
+	db, err := mysql.NewDB(cfg.MySQL)
+	if err != nil {
+		log.Fatalf("数据库连接失败: %v", err)
+	}
+	defer db.Close()
+
+	// 初始化依赖
+	repo := repository.NewMySQLArticleRepository(db)
+	crawlerService := service.NewCrawlerService(cfg, repo)
+	crawlerController := controller.NewCrawlerController(crawlerService)
+
 	// 初始化路由
-	r, err := router.NewRouter(cfg)
+	r, err := router.NewRouter(cfg, crawlerController)
 	if err != nil {
 		logger.Error("路由初始化失败", "error", err)
 		return

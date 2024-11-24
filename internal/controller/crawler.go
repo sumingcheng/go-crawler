@@ -2,7 +2,6 @@ package controller
 
 import (
 	"crawler/internal/service"
-	"crawler/pkg/config"
 	"crawler/pkg/logger"
 	"crawler/pkg/response"
 	"net/http"
@@ -12,12 +11,12 @@ import (
 )
 
 type CrawlerController struct {
-	crawlerService *service.CrawlerService
+	crawlerService service.ICrawlerService
 }
 
-func NewCrawlerHandler(cfg *config.Config) *CrawlerController {
+func NewCrawlerController(service service.ICrawlerService) *CrawlerController {
 	return &CrawlerController{
-		crawlerService: service.NewCrawlerService(cfg),
+		crawlerService: service,
 	}
 }
 

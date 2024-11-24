@@ -10,17 +10,27 @@ import (
 	"time"
 
 	"github.com/playwright-community/playwright-go"
+	"crawler/internal/repository"
 )
 
-type CrawlerService struct {
-	config  *config.Config
-	pw      *playwright.Playwright
-	browser playwright.Browser
+type ICrawlerService interface {
+	CheckPrerequisites() error
+	ExecuteCrawl() error
+	Initialize() error
+	Cleanup()
 }
 
-func NewCrawlerService(cfg *config.Config) *CrawlerService {
+type CrawlerService struct {
+	config     *config.Config
+	pw         *playwright.Playwright
+	browser    playwright.Browser
+	repository repository.ArticleRepository
+}
+
+func NewCrawlerService(cfg *config.Config, repo repository.ArticleRepository) ICrawlerService {
 	return &CrawlerService{
-		config: cfg,
+		config:     cfg,
+		repository: repo,
 	}
 }
 
@@ -135,6 +145,11 @@ func (s *CrawlerService) ExecuteCrawl() error {
 	data, err := scraper.ExtractData(page)
 	if err != nil {
 		return fmt.Errorf("failed to extract data: %w", err)
+	}
+
+	// 保存到数据库
+	if err := s.repository.Save(data); err != nil {
+		return fmt.Errorf("failed to save articles: %w", err)
 	}
 
 	logger.Info("数据提取完成",

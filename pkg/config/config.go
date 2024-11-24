@@ -13,6 +13,7 @@ type Config struct {
 	App    AppConfig           `yaml:"app"`
 	Logger logger.LoggerConfig `yaml:"logger"`
 	Server Server              `yaml:"server"`
+	MySQL  MySQLConfig         `yaml:"mysql"`
 }
 
 // AppConfig 应用配置结构
@@ -33,6 +34,15 @@ type Server struct {
 	AllowedOrigins []string      `yaml:"allowedOrigins"`
 	AllowedMethods []string      `yaml:"allowedMethods"`
 	AllowedHeaders []string      `yaml:"allowedHeaders"`
+}
+
+// MySQLConfig MySQL 配置
+type MySQLConfig struct {
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
+	Database string `yaml:"database"`
 }
 
 // LoadConfig 加载配置文件

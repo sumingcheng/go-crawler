@@ -23,7 +23,7 @@ type Router struct {
 }
 
 // NewRouter 创建并初始化 HTTP 路由实例
-func NewRouter(cfg *config.Config) (*Router, error) {
+func NewRouter(cfg *config.Config, crawlerController *controller.CrawlerController) (*Router, error) {
 	// 设置 gin 模式
 	gin.SetMode(cfg.Server.Mode)
 
@@ -36,10 +36,14 @@ func NewRouter(cfg *config.Config) (*Router, error) {
 		}
 	}
 
+	handlers := &controller.Handlers{
+		Crawler: crawlerController,
+	}
+
 	ginRouter := &Router{
 		config:   cfg,
 		engine:   ginEngine,
-		handlers: controller.InitializeHandlers(cfg),
+		handlers: handlers,
 	}
 
 	// 全局中间件
