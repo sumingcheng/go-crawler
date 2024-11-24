@@ -28,10 +28,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("数据库连接失败: %v", err)
 	}
-	defer db.Close()
 
 	// 初始化依赖
-	repo := repository.NewMySQLArticleRepository(db)
+	repo := repository.NewGormArticleRepository(db)
 	crawlerService := service.NewCrawlerService(cfg, repo)
 	crawlerController := controller.NewCrawlerController(crawlerService)
 

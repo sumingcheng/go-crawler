@@ -1,12 +1,12 @@
 package repository
 
 import (
+	"crawler/internal/repository/model"
 	"crawler/internal/scraper"
 	"crawler/pkg/logger"
-	"fmt"
-	"time"
 
-	"github.com/jmoiron/sqlx"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type ArticleRepository interface {
@@ -14,103 +14,70 @@ type ArticleRepository interface {
 	FindAll() ([]scraper.ArticleCard, error)
 }
 
-type MySQLArticleRepository struct {
-	db *sqlx.DB
+type GormArticleRepository struct {
+	db *gorm.DB
 }
 
-func NewMySQLArticleRepository(db *sqlx.DB) ArticleRepository {
-	return &MySQLArticleRepository{db: db}
+func NewGormArticleRepository(db *gorm.DB) ArticleRepository {
+	return &GormArticleRepository{db: db}
 }
 
-type ArticleModel struct {
-	ID            int64     `db:"id"`
-	Title         string    `db:"title"`
-	Link          string    `db:"link"`
-	Description   string    `db:"description"`
-	PublishedTime string    `db:"published_time"`
-	Reads         int       `db:"reads"`
-	Upvote        int       `db:"upvote"`
-	Comments      int       `db:"comments"`
-	Bookmarks     int       `db:"bookmarks"`
-	Likes         int       `db:"likes"`
-	CreatedAt     time.Time `db:"created_at"`
-	UpdatedAt     time.Time `db:"updated_at"`
-}
-
-func (r *MySQLArticleRepository) Save(articles []scraper.ArticleCard) error {
-	query := `
-        INSERT INTO articles (
-            title, link, description, published_time, 
-            reads, upvote, comments, bookmarks, likes, created_at
-        ) VALUES (
-            :title, :link, :description, :published_time,
-            :reads, :upvote, :comments, :bookmarks, :likes, :created_at
-        ) ON DUPLICATE KEY UPDATE 
-            reads=VALUES(reads),
-            upvote=VALUES(upvote),
-            comments=VALUES(comments),
-            bookmarks=VALUES(bookmarks),
-            likes=VALUES(likes),
-            updated_at=CURRENT_TIMESTAMP
-    `
-
+func (r *GormArticleRepository) Save(articles []scraper.ArticleCard) error {
+	// 将爬虫数据转换为数据库模型
+	var models []model.Article
 	for _, article := range articles {
-		model := ArticleModel{
+		models = append(models, model.Article{
 			Title:         article.Title,
 			Link:          article.Link,
 			Description:   article.Description,
 			PublishedTime: article.PublishedTime,
-			Reads:         article.Stats.Reads,
+			ViewCount:     article.Stats.Reads,
 			Upvote:        article.Stats.Upvote,
 			Comments:      article.Stats.Comments,
 			Bookmarks:     article.Stats.Bookmarks,
 			Likes:         article.Stats.Likes,
-			CreatedAt:     time.Now(),
-		}
+			Status:        1,
+		})
+	}
 
-		_, err := r.db.NamedExec(query, model)
-		if err != nil {
-			logger.Error("保存文章失败",
-				"error", err,
-				"title", article.Title,
-				"link", article.Link,
-			)
-			return fmt.Errorf("failed to save article: %w", err)
-		}
+	// 使用 Upsert 进行批量插入或更新
+	result := r.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "link"}},
+		DoUpdates: clause.AssignmentColumns([]string{"view_count", "upvote", "comments", "bookmarks", "likes"}),
+	}).Create(&models)
+
+	if result.Error != nil {
+		logger.Error("保存文章失败", "error", result.Error)
+		return result.Error
 	}
 
 	logger.Info("成功保存文章", "count", len(articles))
 	return nil
 }
 
-func (r *MySQLArticleRepository) FindAll() ([]scraper.ArticleCard, error) {
-	query := `
-        SELECT title, link, description, published_time,
-               reads, upvote, comments, bookmarks, likes
-        FROM articles ORDER BY created_at DESC
-    `
-
-	var models []ArticleModel
-	if err := r.db.Select(&models, query); err != nil {
-		return nil, fmt.Errorf("failed to query articles: %w", err)
+func (r *GormArticleRepository) FindAll() ([]scraper.ArticleCard, error) {
+	var articles []model.Article
+	if err := r.db.Order("created_at DESC").Find(&articles).Error; err != nil {
+		return nil, err
 	}
 
-	articles := make([]scraper.ArticleCard, len(models))
-	for i, model := range models {
-		articles[i] = scraper.ArticleCard{
-			Title:         model.Title,
-			Link:          model.Link,
-			Description:   model.Description,
-			PublishedTime: model.PublishedTime,
+	// 转换为爬虫数据结构
+	result := make([]scraper.ArticleCard, len(articles))
+	for i, article := range articles {
+		result[i] = scraper.ArticleCard{
+			Title:         article.Title,
+			Link:          article.Link,
+			Description:   article.Description,
+			PublishedTime: article.PublishedTime,
 			Stats: scraper.ArticleStats{
-				Reads:     model.Reads,
-				Upvote:    model.Upvote,
-				Comments:  model.Comments,
-				Bookmarks: model.Bookmarks,
-				Likes:     model.Likes,
+				Reads:     article.ViewCount,
+				Upvote:    article.Upvote,
+				Comments:  article.Comments,
+				Bookmarks: article.Bookmarks,
+				Likes:     article.Likes,
 			},
 		}
 	}
 
-	return articles, nil
+	return result, nil
 }
