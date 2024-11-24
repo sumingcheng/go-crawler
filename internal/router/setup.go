@@ -16,10 +16,23 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// 在文件开头添加接口定义
+type IRouter interface {
+	SetupRoutes()
+	Run(addr string) error
+	GetEngine() *gin.Engine
+}
+
+// 修改 Router 结构体实现接口
 type Router struct {
 	config   *config.Config
 	engine   *gin.Engine
 	handlers *controller.Handlers
+}
+
+// 添加 GetEngine 方法
+func (r *Router) GetEngine() *gin.Engine {
+	return r.engine
 }
 
 // NewRouter 创建并初始化 HTTP 路由实例
