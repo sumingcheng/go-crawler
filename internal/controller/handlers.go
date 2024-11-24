@@ -1,7 +1,9 @@
 package controller
 
-import "crawler/pkg/config"
-import "crawler/internal/service"
+import (
+	"crawler/internal/service"
+	"crawler/pkg/config"
+)
 
 // Handlers 集中管理所有控制器
 type Handlers struct {

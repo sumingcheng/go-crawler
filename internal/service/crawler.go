@@ -1,6 +1,7 @@
 package service
 
 import (
+	"crawler/internal/repository"
 	"crawler/internal/scraper"
 	"crawler/pkg/config"
 	"crawler/pkg/cookies"
@@ -10,7 +11,6 @@ import (
 	"time"
 
 	"github.com/playwright-community/playwright-go"
-	"crawler/internal/repository"
 )
 
 type ICrawlerService interface {

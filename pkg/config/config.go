@@ -38,11 +38,21 @@ type Server struct {
 
 // MySQLConfig MySQL 配置
 type MySQLConfig struct {
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	User     string `yaml:"user"`
-	Password string `yaml:"password"`
-	Database string `yaml:"database"`
+	Host            string        `yaml:"host"`
+	Port            int           `yaml:"port"`
+	User            string        `yaml:"user"`
+	Password        string        `yaml:"password"`
+	Database        string        `yaml:"database"`
+	MaxOpenConns    int           `yaml:"maxOpenConns"`
+	MaxIdleConns    int           `yaml:"maxIdleConns"`
+	ConnMaxLifetime time.Duration `yaml:"connMaxLifetime"`
+	ConnMaxIdleTime time.Duration `yaml:"connMaxIdleTime"`
+	Timeout         time.Duration `yaml:"timeout"`
+	ReadTimeout     time.Duration `yaml:"readTimeout"`
+	WriteTimeout    time.Duration `yaml:"writeTimeout"`
+	ParseTime       bool          `yaml:"parseTime"`
+	Charset         string        `yaml:"charset"`
+	Collation       string        `yaml:"collation"`
 }
 
 // LoadConfig 加载配置文件
