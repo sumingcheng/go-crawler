@@ -24,13 +24,13 @@ func main() {
 	// 3. 初始化数据库连接
 	db, err := mysql.NewDB(cfg.MySQL)
 	if err != nil {
-		logger.Warn("数据库连接失败", "error", err)
+		log.Fatal("数据库连接失败", "error", err)
 	}
 
 	// 4. 初始化依赖注入容器
 	container, err := di.NewContainer(cfg, db)
 	if err != nil {
-		logger.Warn("依赖注入容器初始化失败", "error", err)
+		log.Fatal("依赖注入容器初始化失败", "error", err)
 	}
 
 	// 确保资源正确清理
@@ -42,7 +42,7 @@ func main() {
 	// 6. 启动服务
 	logger.Info("开始启动服务", "port", cfg.Server.Port)
 	if err := container.Router.Run(cfg.Server.Port); err != nil {
-		logger.Warn("服务启动失败", "error", err)
+		log.Fatal("服务启动失败", "error", err)
 		os.Exit(1)
 	}
 }

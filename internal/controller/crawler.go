@@ -14,7 +14,7 @@ type CrawlerController struct {
 	crawlerService service.ICrawlerService
 }
 
-func NewCrawlerController(service service.ICrawlerService) *CrawlerController {
+func NewCrawlerController(service service.ICrawlerService) ICrawlerController {
 	return &CrawlerController{
 		crawlerService: service,
 	}

@@ -15,7 +15,7 @@ type Container struct {
 	DB             *gorm.DB
 	ArticleRepo    repository.ArticleRepository
 	CrawlerService service.ICrawlerService
-	CrawlerHandler *controller.CrawlerController
+	CrawlerHandler controller.ICrawlerController
 	Router         router.IRouter
 }
 
