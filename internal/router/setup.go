@@ -36,7 +36,6 @@ func (r *Router) GetEngine() *gin.Engine {
 
 // NewRouter 创建并初始化 HTTP 路由实例
 func NewRouter(cfg *config.Config, handlers controller.IHandlers) (IRouter, error) {
-	// 设置 gin 模式
 	gin.SetMode(cfg.Server.Mode)
 
 	ginEngine := gin.New()
@@ -48,13 +47,7 @@ func NewRouter(cfg *config.Config, handlers controller.IHandlers) (IRouter, erro
 		}
 	}
 
-	ginRouter := &Router{
-		config:   cfg,
-		engine:   ginEngine,
-		handlers: handlers,
-	}
-
-	// 全局中间件
+	// 设置全局中间件
 	ginEngine.Use(
 		middleware.TraceID(),
 		middleware.Cors(cfg),
@@ -62,7 +55,11 @@ func NewRouter(cfg *config.Config, handlers controller.IHandlers) (IRouter, erro
 		gin.Recovery(),
 	)
 
-	return ginRouter, nil
+	return &Router{
+		config:   cfg,
+		engine:   ginEngine,
+		handlers: handlers,
+	}, nil
 }
 
 // Run 启动 HTTP 服务器并支持优雅关闭

@@ -6,6 +6,7 @@ import (
 	"crawler/internal/router"
 	"crawler/internal/service"
 	"crawler/pkg/config"
+	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -20,36 +21,30 @@ type Container struct {
 }
 
 func NewContainer(cfg *config.Config, db *gorm.DB) (*Container, error) {
-	container := &Container{
-		Config: cfg,
-		DB:     db,
-	}
-
-	if err := container.initializeDependencies(); err != nil {
-		return nil, err
-	}
-
-	return container, nil
-}
-
-func (c *Container) initializeDependencies() error {
 	// 1. Repository
-	c.ArticleRepo = repository.NewGormArticleRepository(c.DB)
+	articleRepo := repository.NewGormArticleRepository(db)
 
 	// 2. Service
-	c.CrawlerService = service.NewCrawlerService(c.Config, c.ArticleRepo)
+	crawlerService := service.NewCrawlerService(cfg, articleRepo)
 
 	// 3. Controller
-	c.CrawlerHandler = controller.NewCrawlerController(c.CrawlerService)
+	crawlerHandler := controller.NewCrawlerController(crawlerService)
 
 	// 4. Router
-	r, err := router.NewRouter(c.Config, controller.NewHandlers(c.CrawlerHandler))
+	r, err := router.NewRouter(cfg, controller.NewHandlers(crawlerHandler))
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("初始化路由失败: %w", err)
 	}
-	c.Router = r
 
-	return nil
+	// 5. 构造并返回容器
+	return &Container{
+		Config:         cfg,
+		DB:             db,
+		ArticleRepo:    articleRepo,
+		CrawlerService: crawlerService,
+		CrawlerHandler: crawlerHandler,
+		Router:         r,
+	}, nil
 }
 
 // 添加清理方法
