@@ -19,7 +19,6 @@ import (
 type IRouter interface {
 	SetupRoutes()
 	ServeHTTP(addr string) error
-	GetEngine() *gin.Engine
 }
 
 // 修改 Router 结构体
@@ -27,11 +26,6 @@ type Router struct {
 	config   *config.Config
 	engine   *gin.Engine
 	handlers controller.IHandlers
-}
-
-// 添加 GetEngine 方法
-func (r *Router) GetEngine() *gin.Engine {
-	return r.engine
 }
 
 // NewRouter 创建并初始化 HTTP 路由实例
@@ -94,11 +88,4 @@ func (r *Router) ServeHTTP(addr string) error {
 
 	logger.Info("HTTP服务启动", "addr", addr, "mode", gin.Mode())
 	return srv.ListenAndServe()
-}
-
-func (r *Router) SetupRoutes() {
-	// 注册业务路由
-	r.setupCrawlerRoutes()
-	// 注册系统路由（健康检查等）
-	r.setupHealthRoutes()
 }

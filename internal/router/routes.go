@@ -6,6 +6,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func (r *Router) SetupRoutes() {
+	// 注册业务路由
+	r.setupCrawlerRoutes()
+	// 注册系统路由（健康检查等）
+	r.setupHealthRoutes()
+}
+
 // setupHealthRoutes 注册健康检查相关路由
 func (r *Router) setupHealthRoutes() {
 	r.engine.GET("/health", func(c *gin.Context) {
