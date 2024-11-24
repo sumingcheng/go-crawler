@@ -37,7 +37,9 @@ func NewRouter(cfg *config.Config, controller controller.ICrawlerController) (*R
 		controller: controller,
 	}
 
+	// 注册业务路由
 	router.setupCrawlerRoutes()
+	// 注册健康检查路由
 	router.setupHealthRoutes()
 
 	return router, nil
