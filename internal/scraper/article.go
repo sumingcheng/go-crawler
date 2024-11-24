@@ -4,6 +4,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 
 	playwright2 "github.com/playwright-community/playwright-go"
 )
@@ -26,24 +27,60 @@ type ArticleStats struct {
 
 func ExtractData(page playwright2.Page) ([]ArticleCard, error) {
 	var articles []ArticleCard
+	seenLinks := make(map[string]bool)
+	noNewDataCount := 0 // 记录连续没有新数据的次数
 
+	// 等待列表容器加载
 	_, err := page.WaitForSelector("div[role='list']")
 	if err != nil {
 		return nil, err
 	}
 
-	cards, err := page.QuerySelectorAll(".CreationManage-CreationCard")
-	if err != nil {
-		return nil, err
-	}
-
-	for _, card := range cards {
-		article, err := extractCardDetails(card)
+	// 无限循环，直到确认没有新数据
+	for {
+		// 执行滚动
+		_, err := page.Evaluate(`window.scrollTo(0, document.body.scrollHeight)`)
 		if err != nil {
-			log.Printf("Error extracting card details: %v", err)
-			continue
+			return nil, err
 		}
-		articles = append(articles, article)
+
+		// 等待新内容加载（3秒）
+		time.Sleep(3 * time.Second)
+
+		// 获取当前所有文章卡片
+		cards, err := page.QuerySelectorAll(".CreationManage-CreationCard")
+		if err != nil {
+			return nil, err
+		}
+
+		previousCount := len(articles)
+
+		// 处理新的文章卡片
+		for _, card := range cards {
+			article, err := extractCardDetails(card)
+			if err != nil {
+				log.Printf("Error extracting card details: %v", err)
+				continue
+			}
+
+			// 检查是否已经处理过这篇文章
+			if !seenLinks[article.Link] {
+				seenLinks[article.Link] = true
+				articles = append(articles, article)
+			}
+		}
+
+		// 检查是否有新数据
+		if len(articles) == previousCount {
+			noNewDataCount++
+			// 连续5次没有新数据，认为已经到底
+			if noNewDataCount >= 5 {
+				break
+			}
+		} else {
+			// 有新数据，重置计数器
+			noNewDataCount = 0
+		}
 	}
 
 	return articles, nil
