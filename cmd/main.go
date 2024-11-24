@@ -36,9 +36,6 @@ func main() {
 	// 确保资源正确清理
 	defer container.ReleaseResources()
 
-	// 5. 设置路由
-	container.Router.SetupRoutes()
-
 	// 6. 启动服务
 	logger.Info("开始启动服务", "port", cfg.Server.Port)
 	if err := container.Router.ServeHTTP(cfg.Server.Port); err != nil {

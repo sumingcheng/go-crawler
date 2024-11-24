@@ -17,43 +17,57 @@ import (
 )
 
 type IRouter interface {
-	SetupRoutes()
 	ServeHTTP(addr string) error
 }
 
 // 修改 Router 结构体
 type Router struct {
-	config   *config.Config
-	engine   *gin.Engine
-	handlers controller.IHandlers
+	config     *config.Config
+	engine     *gin.Engine
+	controller controller.ICrawlerController
 }
 
 // NewRouter 创建并初始化 HTTP 路由实例
-func NewRouter(cfg *config.Config, handlers controller.IHandlers) (IRouter, error) {
+func NewRouter(cfg *config.Config, controller controller.ICrawlerController) (IRouter, error) {
 	gin.SetMode(cfg.Server.Mode)
 
 	ginEngine := gin.New()
 
-	// 设置受信任代理服务器IP列表
+	// 初始化中间件
+	if err := setupMiddleware(cfg, ginEngine); err != nil {
+		return nil, err
+	}
+
+	router := &Router{
+		config:     cfg,
+		engine:     ginEngine,
+		controller: controller,
+	}
+
+	// 注册业务路由
+	router.setupCrawlerRoutes()
+	// 注册系统路由（健康检查等）
+	router.setupHealthRoutes()
+
+	return router, nil
+}
+
+// 抽取中间件设置为独立函数
+func setupMiddleware(cfg *config.Config, engine *gin.Engine) error {
 	if len(cfg.Server.TrustedProxies) > 0 {
-		if err := ginEngine.SetTrustedProxies(cfg.Server.TrustedProxies); err != nil {
-			return nil, fmt.Errorf("设置受信任代理失败: %w", err)
+		if err := engine.SetTrustedProxies(cfg.Server.TrustedProxies); err != nil {
+			return fmt.Errorf("设置受信任代理失败: %w", err)
 		}
 	}
 
-	// 设置全局中间件
-	ginEngine.Use(
+	engine.Use(
 		middleware.TraceID(),
 		middleware.Cors(cfg),
 		gin.Logger(),
 		gin.Recovery(),
 	)
 
-	return &Router{
-		config:   cfg,
-		engine:   ginEngine,
-		handlers: handlers,
-	}, nil
+	return nil
 }
 
 // Run 启动 HTTP 服务器并支持优雅关闭

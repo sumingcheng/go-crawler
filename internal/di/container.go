@@ -28,21 +28,20 @@ func NewContainer(cfg *config.Config, db *gorm.DB) (*Container, error) {
 	crawlerService := service.NewCrawlerService(cfg, articleRepo)
 
 	// 3. Controller
-	crawlerHandler := controller.NewCrawlerController(crawlerService)
+	crawlerController := controller.NewCrawlerController(crawlerService)
 
 	// 4. Router
-	r, err := router.NewRouter(cfg, controller.NewHandlers(crawlerHandler))
+	r, err := router.NewRouter(cfg, crawlerController)
 	if err != nil {
 		return nil, fmt.Errorf("初始化路由失败: %w", err)
 	}
 
-	// 5. 构造并返回容器
 	return &Container{
 		Config:         cfg,
 		DB:             db,
 		ArticleRepo:    articleRepo,
 		CrawlerService: crawlerService,
-		CrawlerHandler: crawlerHandler,
+		CrawlerHandler: crawlerController,
 		Router:         r,
 	}, nil
 }

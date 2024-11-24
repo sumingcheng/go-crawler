@@ -10,6 +10,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// ICrawlerController 爬虫控制器接口
+type ICrawlerController interface {
+	HandleCrawl(c *gin.Context)
+}
+
 type CrawlerController struct {
 	crawlerService service.ICrawlerService
 }
