@@ -1,6 +1,7 @@
 package scraper
 
 import (
+	"crawler/pkg/logger"
 	"log"
 	"strconv"
 	"strings"
@@ -36,6 +37,8 @@ func ExtractData(page playwright2.Page) ([]ArticleCard, error) {
 		return nil, err
 	}
 
+	logger.Info("开始提取文章数据")
+
 	// 无限循环，直到确认没有新数据
 	for {
 		// 执行滚动
@@ -59,7 +62,7 @@ func ExtractData(page playwright2.Page) ([]ArticleCard, error) {
 		for _, card := range cards {
 			article, err := extractCardDetails(card)
 			if err != nil {
-				log.Printf("Error extracting card details: %v", err)
+				logger.Error("提取文章详情失败", "error", err)
 				continue
 			}
 
@@ -67,14 +70,26 @@ func ExtractData(page playwright2.Page) ([]ArticleCard, error) {
 			if !seenLinks[article.Link] {
 				seenLinks[article.Link] = true
 				articles = append(articles, article)
+				logger.Info("成功提取文章",
+					"title", article.Title,
+					"link", article.Link,
+					"total_articles", len(articles),
+				)
 			}
 		}
 
 		// 检查是否有新数据
 		if len(articles) == previousCount {
 			noNewDataCount++
-			// 连续5次没有新数据，认为已经到底
-			if noNewDataCount >= 5 {
+			logger.Info("本次滚动未发现新文章",
+				"retry_count", noNewDataCount,
+				"total_articles", len(articles),
+			)
+			// 连续3次没有新数据，认为已经到底
+			if noNewDataCount >= 3 {
+				logger.Info("已到达页面底部，停止提取",
+					"total_articles", len(articles),
+				)
 				break
 			}
 		} else {

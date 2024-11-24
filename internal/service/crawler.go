@@ -62,7 +62,7 @@ func (s *CrawlerService) Initialize() error {
 	}
 
 	browserOpts := playwright.BrowserTypeLaunchOptions{
-		Headless: playwright.Bool(true), // 默认使用无头模式
+		Headless: playwright.Bool(false), // 使用浏览器模式
 	}
 
 	browser, err := pw.Chromium.Launch(browserOpts)
