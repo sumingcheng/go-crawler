@@ -17,7 +17,7 @@ type Container struct {
 	ArticleRepo    repository.ArticleRepository
 	CrawlerService service.ICrawlerService
 	CrawlerHandler controller.ICrawlerController
-	Router         router.IRouter
+	Router         *router.Router
 }
 
 func NewContainer(cfg *config.Config, db *gorm.DB) (*Container, error) {
