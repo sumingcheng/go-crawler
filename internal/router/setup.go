@@ -16,18 +16,17 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// 在文件开头添加接口定义
 type IRouter interface {
 	SetupRoutes()
 	Run(addr string) error
 	GetEngine() *gin.Engine
 }
 
-// 修改 Router 结构体实现接口
+// 修改 Router 结构体
 type Router struct {
 	config   *config.Config
 	engine   *gin.Engine
-	handlers *controller.Handlers
+	handlers controller.IHandlers
 }
 
 // 添加 GetEngine 方法
@@ -36,7 +35,7 @@ func (r *Router) GetEngine() *gin.Engine {
 }
 
 // NewRouter 创建并初始化 HTTP 路由实例
-func NewRouter(cfg *config.Config, crawlerController *controller.CrawlerController) (*Router, error) {
+func NewRouter(cfg *config.Config, handlers controller.IHandlers) (IRouter, error) {
 	// 设置 gin 模式
 	gin.SetMode(cfg.Server.Mode)
 
@@ -47,10 +46,6 @@ func NewRouter(cfg *config.Config, crawlerController *controller.CrawlerControll
 		if err := ginEngine.SetTrustedProxies(cfg.Server.TrustedProxies); err != nil {
 			return nil, fmt.Errorf("设置受信任代理失败: %w", err)
 		}
-	}
-
-	handlers := &controller.Handlers{
-		Crawler: crawlerController,
 	}
 
 	ginRouter := &Router{

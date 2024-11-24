@@ -43,7 +43,7 @@ func (c *Container) initializeDependencies() error {
 	c.CrawlerHandler = controller.NewCrawlerController(c.CrawlerService)
 
 	// 4. Router
-	r, err := router.NewRouter(c.Config, c.CrawlerHandler)
+	r, err := router.NewRouter(c.Config, controller.NewHandlers(c.CrawlerHandler))
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (c *Container) Cleanup() {
 	if c.CrawlerService != nil {
 		c.CrawlerService.Cleanup()
 	}
-	
+
 	if c.DB != nil {
 		if sqlDB, err := c.DB.DB(); err == nil {
 			sqlDB.Close()

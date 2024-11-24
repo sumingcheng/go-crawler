@@ -21,6 +21,6 @@ func (r *Router) setupCrawlerRoutes() {
 	api := r.engine.Group("/api")
 	crawler := api.Group("/crawler")
 	{
-		crawler.POST("/zhihu", r.handlers.Crawler.HandleCrawl)
+		crawler.POST("/zhihu", r.handlers.GetCrawlerController().HandleCrawl)
 	}
 }
