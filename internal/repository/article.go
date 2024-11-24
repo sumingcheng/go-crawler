@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"crawler/internal/repository/model"
 	"crawler/internal/scraper"
 	"crawler/pkg/logger"
 
@@ -24,9 +23,9 @@ func NewGormArticleRepository(db *gorm.DB) ArticleRepository {
 
 func (r *GormArticleRepository) UpsertArticles(articles []scraper.ArticleCard) error {
 	// 将爬虫数据转换为数据库模型
-	var models []model.Article
+	var models []Article
 	for _, article := range articles {
-		models = append(models, model.Article{
+		models = append(models, Article{
 			Title:         article.Title,
 			Link:          article.Link,
 			Description:   article.Description,
@@ -56,7 +55,7 @@ func (r *GormArticleRepository) UpsertArticles(articles []scraper.ArticleCard) e
 }
 
 func (r *GormArticleRepository) FindAll() ([]scraper.ArticleCard, error) {
-	var articles []model.Article
+	var articles []Article
 	if err := r.db.Order("created_at DESC").Find(&articles).Error; err != nil {
 		return nil, err
 	}

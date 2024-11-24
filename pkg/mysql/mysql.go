@@ -1,7 +1,7 @@
 package mysql
 
 import (
-	"crawler/internal/repository/model"
+	"crawler/internal/repository"
 	"crawler/pkg/config"
 	"fmt"
 
@@ -33,7 +33,7 @@ func NewDB(dbConfig config.MySQLConfig) (*gorm.DB, error) {
 	}
 
 	// 自动迁移表结构
-	if err := db.AutoMigrate(&model.Article{}); err != nil {
+	if err := db.AutoMigrate(&repository.Article{}); err != nil {
 		return nil, fmt.Errorf("数据库迁移失败: %w", err)
 	}
 
