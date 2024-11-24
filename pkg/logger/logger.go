@@ -17,6 +17,7 @@ type Logger interface {
 	Error(msg string, args ...interface{})
 	Debug(msg string, args ...interface{})
 	Warn(msg string, args ...interface{})
+	Fatal(msg string, args ...interface{})
 	WithFields(fields map[string]interface{}) Logger
 }
 
@@ -69,6 +70,7 @@ func (l *zapLogger) Info(msg string, args ...interface{})  { l.logger.Infow(msg,
 func (l *zapLogger) Error(msg string, args ...interface{}) { l.logger.Errorw(msg, args...) }
 func (l *zapLogger) Debug(msg string, args ...interface{}) { l.logger.Debugw(msg, args...) }
 func (l *zapLogger) Warn(msg string, args ...interface{})  { l.logger.Warnw(msg, args...) }
+func (l *zapLogger) Fatal(msg string, args ...interface{}) { l.logger.Fatalw(msg, args...) }
 
 func (l *zapLogger) WithFields(fields map[string]interface{}) Logger {
 	args := make([]interface{}, 0, len(fields)*2)
@@ -83,6 +85,7 @@ func Info(msg string, args ...interface{})            { defaultLogger.Info(msg, 
 func Error(msg string, args ...interface{})           { defaultLogger.Error(msg, args...) }
 func Debug(msg string, args ...interface{})           { defaultLogger.Debug(msg, args...) }
 func Warn(msg string, args ...interface{})            { defaultLogger.Warn(msg, args...) }
+func Fatal(msg string, args ...interface{})           { defaultLogger.Fatal(msg, args...) }
 func WithFields(fields map[string]interface{}) Logger { return defaultLogger.WithFields(fields) }
 
 // 内部辅助函数
