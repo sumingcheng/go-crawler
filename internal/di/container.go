@@ -53,7 +53,7 @@ func (c *Container) initializeDependencies() error {
 }
 
 // 添加清理方法
-func (c *Container) Cleanup() {
+func (c *Container) ReleaseResources() {
 	// 按依赖关系的反向顺序清理资源
 	if c.CrawlerService != nil {
 		c.CrawlerService.Cleanup()

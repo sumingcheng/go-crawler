@@ -10,7 +10,7 @@ import (
 )
 
 type ArticleRepository interface {
-	Save(articles []scraper.ArticleCard) error
+	UpsertArticles(articles []scraper.ArticleCard) error
 	FindAll() ([]scraper.ArticleCard, error)
 }
 
@@ -22,7 +22,7 @@ func NewGormArticleRepository(db *gorm.DB) ArticleRepository {
 	return &GormArticleRepository{db: db}
 }
 
-func (r *GormArticleRepository) Save(articles []scraper.ArticleCard) error {
+func (r *GormArticleRepository) UpsertArticles(articles []scraper.ArticleCard) error {
 	// 将爬虫数据转换为数据库模型
 	var models []model.Article
 	for _, article := range articles {

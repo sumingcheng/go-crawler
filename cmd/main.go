@@ -34,14 +34,14 @@ func main() {
 	}
 
 	// 确保资源正确清理
-	defer container.Cleanup()
+	defer container.ReleaseResources()
 
 	// 5. 设置路由
 	container.Router.SetupRoutes()
 
 	// 6. 启动服务
 	logger.Info("开始启动服务", "port", cfg.Server.Port)
-	if err := container.Router.Run(cfg.Server.Port); err != nil {
+	if err := container.Router.ServeHTTP(cfg.Server.Port); err != nil {
 		logger.Fatal("服务启动失败", "error", err)
 		os.Exit(1)
 	}

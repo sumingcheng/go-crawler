@@ -148,7 +148,7 @@ func (s *CrawlerService) ExecuteCrawl() error {
 	}
 
 	// 保存到数据库
-	if err := s.repository.Save(data); err != nil {
+	if err := s.repository.UpsertArticles(data); err != nil {
 		return fmt.Errorf("failed to save articles: %w", err)
 	}
 

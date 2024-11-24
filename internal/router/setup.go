@@ -18,7 +18,7 @@ import (
 
 type IRouter interface {
 	SetupRoutes()
-	Run(addr string) error
+	ServeHTTP(addr string) error
 	GetEngine() *gin.Engine
 }
 
@@ -66,7 +66,7 @@ func NewRouter(cfg *config.Config, handlers controller.IHandlers) (IRouter, erro
 }
 
 // Run 启动 HTTP 服务器并支持优雅关闭
-func (r *Router) Run(addr string) error {
+func (r *Router) ServeHTTP(addr string) error {
 	srv := &http.Server{
 		Addr:           addr,
 		Handler:        r.engine,
